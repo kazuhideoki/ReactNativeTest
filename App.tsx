@@ -1,10 +1,12 @@
 import React from "react";
-import { Button, StyleSheet, Text, View } from "react-native";
-
+import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 import * as firebase from "firebase";
-
 import "firebase/firestore";
 import serviceAccount from "./serviceAccountKey.json";
+
+import { LogBox } from "react-native";
+LogBox.ignoreAllLogs();
+
 // Initialize Firebase
 const firebaseConfig = {
   apiKey: serviceAccount.private_key,
@@ -20,11 +22,18 @@ console.log(db);
 
 export default function App() {
   const [users, setUsers] = React.useState([]);
+  const [name, setName] = React.useState("");
+  const [age, setAge] = React.useState("");
 
-  const logUsers = () => console.log(users);
-
-  React.useEffect(() => {
-    db.collection("user")
+  const setUser = async () => {
+    await db.collection("user").doc().set({
+      name: name,
+      age: age,
+    });
+  };
+  const getUser = () =>
+    db
+      .collection("user")
       .get()
       .then((querySnapshot) => {
         const docs = querySnapshot.docs;
@@ -34,17 +43,42 @@ export default function App() {
 
         setUsers(list);
       });
+
+  React.useEffect(() => {
+    getUser();
   }, []);
 
   return (
     <View style={styles.container}>
       <Text>Open up App.tsx to start working on your app!</Text>
       <Text>できたよ</Text>
-      <Button title="セット" onPress={() => logUsers()} />
-      {/* <Button title="セット" onPress={() => setData()} /> */}
-      {users.map((user) => (
-        <Text>{user.name}</Text>
+      {users.map((user, index) => (
+        <Text key={index}>
+          {user.name} {user.age}
+        </Text>
       ))}
+      <View style={styles.textInputView}>
+        <Text>名前</Text>
+
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          style={styles.textInput}
+        />
+      </View>
+      <View style={styles.textInputView}>
+        <Text>年齢</Text>
+        <TextInput value={age} onChangeText={setAge} style={styles.textInput} />
+      </View>
+      <Button
+        title="追加"
+        onPress={() => {
+          setUser();
+          getUser();
+          setName("");
+          setAge("");
+        }}
+      />
     </View>
   );
 }
@@ -55,5 +89,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+  },
+  textInputView: {
+    display: "flex",
+    flexDirection: "row",
+  },
+  textInput: {
+    borderWidth: 1,
+    width: 200,
+    // marginTop: "20px",
   },
 });
